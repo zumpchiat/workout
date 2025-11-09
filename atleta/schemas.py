@@ -1,6 +1,8 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field, PositiveFloat
+from pydantic import Field, PositiveFloat
+
+from contrib.schemas import BaseModel
 
 
 class Atleta(BaseModel):
