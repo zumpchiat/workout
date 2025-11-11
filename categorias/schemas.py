@@ -1,11 +1,16 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
-from pydantic import Field
+from pydantic import UUID4, Field
 
 from contrib.schemas import BaseSchema
 
 
-class Categoria(BaseSchema):
+class CategoriaIn(BaseSchema):
     nome: Annotated[
-        str, Field(description="Nome da categoria", examples="Scale", max_length=15)
+        str, Field(description="Nome da categoria", example="Scale", max_length=10)
     ]
+
+
+class CategoriaOut(CategoriaIn):
+    #  id: Annotated[UUID4, Field(description="Identificador da categoria")]
+    id: Optional[UUID4] = None
