@@ -6,7 +6,7 @@ from pydantic import UUID4
 from sqlalchemy.future import select
 
 from atleta.models import AtletaModel
-from atleta.schemas import AtletaIn, AtletaOut
+from atleta.schemas import AtletaIn, AtletaOut, AtletaUpdate
 from categorias.models import CategoriaModel
 from centro_treinamento.models import CentroTreinamentoModel
 from contrib.dependencies import DatabaseDependency
@@ -79,3 +79,71 @@ async def create_atleta(
         )
 
     return atleta_out
+
+
+@router.get(
+    "/",
+    summary="Consulta todos os Atletas",
+    status_code=status.HTTP_200_OK,
+    response_model=list[AtletaOut],
+)
+async def get_all(db_session: DatabaseDependency) -> list[AtletaOut]:
+    atletas: list[AtletaOut] = (
+        (await db_session.execute(select(AtletaModel))).scalars().all()
+    )
+    return atletas
+
+
+@router.get(
+    "/{id}",
+    summary="Consulta Atleta por id ",
+    status_code=status.HTTP_200_OK,
+    response_model=AtletaOut,
+)
+async def get_one(id: str, db_session: DatabaseDependency) -> AtletaOut:
+
+    atleta: AtletaOut = (
+        (await db_session.execute(select(AtletaModel).filter_by(id=id)))
+        .scalars()
+        .first()
+    )
+
+    if not atleta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Ops!!! Atleta {id} não encontrado!",
+        )
+
+    return atleta
+
+
+@router.patch(
+    "/{id}",
+    summary="Atualiza dados do Atleta",
+    status_code=status.HTTP_200_OK,
+    response_model=AtletaUpdate,
+)
+async def update(
+    id: str, db_session: DatabaseDependency, atleta_up: AtletaUpdate = Body(...)
+) -> AtletaUpdate:
+    atleta: AtletaUpdate = (
+        (await db_session.execute(select(AtletaModel).filter_by(id=id)))
+        .scalars()
+        .first()
+    )
+
+    if not atleta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Ops!! Atleta {id} não existe",
+        )
+
+    atleta_update = atleta_up.model_dump(exclude_unset=True)
+    for key, value in atleta_update.items():
+        setattr(atleta, key, value)
+
+    # breakpoint()
+    await db_session.commit()
+    await db_session.refresh(atleta)
+
+    return AtletaUpdate.model_validate(atleta)
