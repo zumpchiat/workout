@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 
-from pydantic import Field, PositiveFloat
+from pydantic import BaseModel, Field, PositiveFloat
 
 from categorias.schemas import CategoriaIn
 from centro_treinamento.schemas import CentroTreinamentoAtleta
@@ -32,6 +32,21 @@ class AtletaIn(Atleta):
 
 class AtletaOut(Atleta, OutMixin):
     pass
+
+
+class AtletaBasic(BaseModel):
+    nome: Annotated[
+        str, Field(description="Nome do atleta", example="Joao", max_length=50)
+    ]
+
+    centro_treinamento: Annotated[
+        CentroTreinamentoAtleta, Field(description="Centro de treinamento do atleta")
+    ]
+    categoria: Annotated[CategoriaIn, Field(description="Categoria do atleta")]
+
+    class Config:
+
+        from_attributes = True
 
 
 class AtletaUpdate(BaseSchema):

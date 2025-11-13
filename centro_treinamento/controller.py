@@ -24,7 +24,7 @@ async def post(
 ) -> CentroTreinamentoOut:
 
     centro_treinamento_out = CentroTreinamentoOut(
-        id=uuid4(), **centro_treinamento_in.model_dump()
+        id=str(uuid4()), **centro_treinamento_in.model_dump()
     )
     centro_treinamento_model = CentroTreinamentoModel(
         **centro_treinamento_out.model_dump()

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Body, HTTPException, status
@@ -6,7 +7,7 @@ from pydantic import UUID4
 from sqlalchemy.future import select
 
 from atleta.models import AtletaModel
-from atleta.schemas import AtletaIn, AtletaOut, AtletaUpdate
+from atleta.schemas import AtletaBasic, AtletaIn, AtletaOut, AtletaUpdate
 from categorias.models import CategoriaModel
 from centro_treinamento.models import CentroTreinamentoModel
 from contrib.dependencies import DatabaseDependency
@@ -83,14 +84,35 @@ async def create_atleta(
 
 @router.get(
     "/",
-    summary="Consulta todos os Atletas",
+    summary="Consulta todos os Atletas ou Filtra por nome ou cpf",
     status_code=status.HTTP_200_OK,
-    response_model=list[AtletaOut],
+    response_model=list[AtletaBasic],
 )
-async def get_all(db_session: DatabaseDependency) -> list[AtletaOut]:
-    atletas: list[AtletaOut] = (
-        (await db_session.execute(select(AtletaModel))).scalars().all()
-    )
+async def get_all(
+    db_session: DatabaseDependency,
+    nome: Optional[str] = None,
+    cpf: Optional[str] = None,
+) -> list[AtletaBasic]:
+
+    query = select(AtletaModel)
+
+    if nome:
+        query = query.filter(AtletaModel.nome.ilike(f"%{nome}%"))
+
+    if cpf:
+        query = query.filter(AtletaModel.cpf == cpf)
+
+    if (nome) and (cpf):
+        query = query.filter(AtletaModel.cpf == cpf)
+
+    atletas: list[AtletaModel] = (await db_session.execute(query)).scalars().all()
+
+    if not atletas:
+        raise HTTPException(
+            status_code=status.HTTP_200_OK,
+            detail="OPS!!! Atleta não encontrado!",
+        )
+
     return atletas
 
 
