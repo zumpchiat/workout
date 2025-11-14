@@ -21,8 +21,26 @@ router = APIRouter()
 async def create_category(
     db_session: DatabaseDependency, categoria_in: CategoriaIn = Body(...)
 ) -> CategoriaOut:
-    categoria_out = CategoriaOut(id=uuid4(), **categoria_in.model_dump())
+    categoria_out = CategoriaOut(id=str(uuid4()), **categoria_in.model_dump())
     categoria_model = CategoriaModel(**categoria_out.model_dump())
+    categoria_nome = categoria_in.nome
+
+    cat_nome = (
+        (
+            await db_session.execute(
+                select(CategoriaModel).filter_by(nome=categoria_nome)
+            )
+        )
+        .scalars()
+        .first()
+    )
+
+    if cat_nome:
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            detail=f"A categoria {categoria_nome} já existe!",
+        )
+
     db_session.add(categoria_model)
     await db_session.commit()
 
