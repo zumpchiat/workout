@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Body, HTTPException, status
+from fastapi_pagination import Page, add_pagination, paginate
 from pydantic import UUID4
 from sqlalchemy.future import select
 
@@ -99,13 +100,13 @@ async def create_atleta(
     "/",
     summary="Consulta todos os Atletas ou Filtra por nome ou cpf",
     status_code=status.HTTP_200_OK,
-    response_model=list[AtletaBasic],
+    response_model=Page[AtletaBasic],
 )
 async def get_all(
     db_session: DatabaseDependency,
     nome: Optional[str] = None,
     cpf: Optional[str] = None,
-) -> list[AtletaBasic]:
+) -> AtletaBasic:
 
     query = select(AtletaModel)
 
@@ -126,7 +127,10 @@ async def get_all(
             detail="OPS!!! Atleta não encontrado!",
         )
 
-    return atletas
+    return paginate(atletas)
+
+
+add_pagination(router)
 
 
 @router.get(
